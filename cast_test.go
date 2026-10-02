@@ -7,6 +7,7 @@ package cast_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -239,3 +240,64 @@ type MyUint32 uint32
 type MyUint64 uint64
 type MyFloat32 float32
 type MyFloat64 float64
+
+func TestTypedNumericOverflow(t *testing.T) {
+	c := qt.New(t)
+
+	// Issue #356 regression tests: out-of-range typed numeric conversions should return errors
+	_, err := cast.ToInt64E(uint64(math.MaxUint64))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt64E(1e300)
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt64E(math.NaN())
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt64E(math.Inf(1))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt64E(math.Inf(-1))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt64E(float64(math.MaxInt64))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt8E(1e300)
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToInt8E(int64(300))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToUint64E(math.NaN())
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToUint64E(math.Inf(1))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToUint64E(float64(-1e300))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToUint8E(uint64(300))
+	c.Assert(err, qt.IsNotNil)
+
+	_, err = cast.ToIntE(uint64(math.MaxUint64))
+	c.Assert(err, qt.IsNotNil)
+
+	// In-range conversions should continue to succeed
+	v64, err := cast.ToInt64E(int64(42))
+	c.Assert(err, qt.IsNil)
+	c.Assert(v64, qt.Equals, int64(42))
+
+	v64, err = cast.ToInt64E(3.7)
+	c.Assert(err, qt.IsNil)
+	c.Assert(v64, qt.Equals, int64(3))
+
+	v8, err := cast.ToInt8E(-128.9)
+	c.Assert(err, qt.IsNil)
+	c.Assert(v8, qt.Equals, int8(-128))
+
+	vu64, err := cast.ToUint64E(uint64(7))
+	c.Assert(err, qt.IsNil)
+	c.Assert(vu64, qt.Equals, uint64(7))
+}
