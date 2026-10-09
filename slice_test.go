@@ -230,13 +230,68 @@ func TestUintSlice(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
+	type user struct {
+		Name string
+		Age  int
+	}
+	type users []user
+	type customIntSlice []int
+	type customArray [3]int
+
+	u1 := user{Name: "Alice", Age: 30}
+	u2 := user{Name: "Bob", Age: 25}
+
 	testCases := []testCase{
 		{[]any{1, 3}, []any{1, 3}, false},
+		{[]any{}, []any{}, false},
+		{[]any(nil), []any(nil), false},
 		{[]map[string]any{{"k1": 1}, {"k2": 2}}, []any{map[string]any{"k1": 1}, map[string]any{"k2": 2}}, false},
+
+		// Primitives
+		{[]int{1, 2, 3}, []any{1, 2, 3}, false},
+		{[]int8{int8(1), int8(2)}, []any{int8(1), int8(2)}, false},
+		{[]int16{int16(1), int16(2)}, []any{int16(1), int16(2)}, false},
+		{[]int32{int32(1), int32(2)}, []any{int32(1), int32(2)}, false},
+		{[]int64{int64(1), int64(2)}, []any{int64(1), int64(2)}, false},
+		{[]uint{uint(1), uint(2)}, []any{uint(1), uint(2)}, false},
+		{[]uint8{uint8(1), uint8(2)}, []any{uint8(1), uint8(2)}, false},
+		{[]uint16{uint16(1), uint16(2)}, []any{uint16(1), uint16(2)}, false},
+		{[]uint32{uint32(1), uint32(2)}, []any{uint32(1), uint32(2)}, false},
+		{[]uint64{uint64(1), uint64(2)}, []any{uint64(1), uint64(2)}, false},
+		{[]float32{float32(1.5), float32(2.5)}, []any{float32(1.5), float32(2.5)}, false},
+		{[]float64{1.5, 2.5}, []any{1.5, 2.5}, false},
+		{[]bool{true, false}, []any{true, false}, false},
+		{[]string{"foo", "bar"}, []any{"foo", "bar"}, false},
+
+		// Structs and pointers
+		{[]user{u1, u2}, []any{u1, u2}, false},
+		{[]*user{&u1, &u2}, []any{&u1, &u2}, false},
+
+		// Custom slice types
+		{users{u1, u2}, []any{u1, u2}, false},
+		{customIntSlice{10, 20}, []any{10, 20}, false},
+
+		// Arrays
+		{[3]int{1, 2, 3}, []any{1, 2, 3}, false},
+		{[2]string{"a", "b"}, []any{"a", "b"}, false},
+		{[2]user{u1, u2}, []any{u1, u2}, false},
+		{customArray{7, 8, 9}, []any{7, 8, 9}, false},
+		{[0]int{}, []any{}, false},
+
+		// Typed nil and empty slices
+		{[]int(nil), []any(nil), false},
+		{[]string(nil), []any(nil), false},
+		{[]int{}, []any{}, false},
+		{[]string{}, []any{}, false},
 
 		// Failure cases
 		{nil, nil, true},
 		{testing.T{}, nil, true},
+		{123, nil, true},
+		{"not-a-slice", nil, true},
+		{true, nil, true},
+		{map[string]any{"key": "value"}, nil, true},
+		{u1, nil, true},
 	}
 
 	runSliceTests(t, testCases, cast.ToSlice, cast.ToSliceE)
